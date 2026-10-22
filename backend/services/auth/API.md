@@ -4,7 +4,7 @@
 
 The Auth Service owns credentials and token lifecycle. It does not own user profiles or preferences.
 
-All public auth endpoints are versioned under `/api/v1/auth`. Until the API Gateway is introduced, this service can be run directly for local development. In the production architecture, clients access these endpoints through the API Gateway only.
+All public auth endpoints are versioned under `/api/v1/auth`. The API Gateway forwards client requests matching `/api/v1/auth/*` directly to this service.
 
 All request and response bodies use JSON. Requests that include a body must send `Content-Type: application/json`.
 
@@ -52,6 +52,8 @@ All API errors use this shape:
 | `USERNAME_ALREADY_EXISTS` | 409 | The requested username is already in use. |
 | `INVALID_REFRESH_TOKEN` | 401 | The refresh token is invalid, expired, revoked, or has the wrong purpose. |
 | `UNAUTHORIZED` | 401 | A required access token is missing, invalid, or expired. |
+| `ACCOUNT_INACTIVE` | 403 | The requested account is inactive or suspended. |
+| `TOO_MANY_REQUESTS` | 429 | Rate limit exceeded. |
 | `NOT_FOUND` | 404 | The requested resource or route does not exist. |
 | `INTERNAL_ERROR` | 500 | An unexpected server error occurred. |
 
@@ -141,7 +143,7 @@ Success response (`200`):
 }
 ```
 
-Failure responses: `400 VALIDATION_ERROR`, `401 INVALID_CREDENTIALS`, `500 INTERNAL_ERROR`.
+Failure responses: `400 VALIDATION_ERROR`, `401 INVALID_CREDENTIALS`, `403 ACCOUNT_INACTIVE`, `500 INTERNAL_ERROR`.
 
 ### `POST /api/v1/auth/refresh`
 
@@ -185,16 +187,32 @@ Success response (`204`): no response body.
 
 Failure responses: `400 VALIDATION_ERROR`, `500 INTERNAL_ERROR`.
 
+### `GET /api/v1/auth/me`
+
+Protected endpoint returning the currently authenticated user's identity verified from the Bearer access token.
+
+Request Header: `Authorization: Bearer <access-token>`
+
+Success response (`200`):
+
+```json
+{
+  "user": {
+    "id": "uuid",
+    "email": "angler@example.com",
+    "username": "river_angler",
+    "role": "user"
+  }
+}
+```
+
+Failure responses: `401 UNAUTHORIZED`, `500 INTERNAL_ERROR`.
+
 ## Authentication strategy
 
-Phase 5 implements this contract with JWTs:
-
-- Access tokens are short-lived Bearer tokens (initial target: 15 minutes) and are sent in the `Authorization: Bearer <access-token>` header.
-- Refresh tokens are long-lived (initial target: 30 days), carry a distinct `purpose` claim, and are accepted only by the refresh/logout flows.
-- Each refresh rotates the token pair. Refresh-token records are retained in Auth-owned storage so they can be revoked.
-- Signing secrets, token lifetimes, and issuer/audience configuration come exclusively from environment variables; they are never hardcoded or committed.
-- Passwords are hashed before persistence and password hashes are never included in API responses.
-
-## Current implementation status
-
-`GET /health` is implemented. The four auth endpoints are currently intentional `501 Not Implemented` placeholders while PostgreSQL, password hashing, JWT issuance, and refresh-token persistence are completed in later phases. Their final success and failure formats will conform to this contract.
+- Access tokens are short-lived Bearer tokens (15 minutes) and are sent in the `Authorization: Bearer <access-token>` header.
+- Refresh tokens are long-lived (30 days), carry distinct `purpose: 'refresh'` and `familyId` claims.
+- Each refresh rotates the token pair. Refresh tokens are tracked in `auth_refresh_tokens` via SHA-256 hash.
+- **Reuse Detection:** If an already-rotated or revoked refresh token is presented, the entire token family is immediately revoked to thwart token theft.
+- Passwords are securely hashed with `bcryptjs` using 12 salt rounds before persistence and are never included in API responses or logs.
+- Sensitive endpoints (`/register`, `/login`, `/refresh`) are protected by sliding-window rate limiting.

@@ -20,6 +20,21 @@ module.exports = (sequelize, DataTypes) => sequelize.define(
     bio: {
       type: DataTypes.TEXT,
       allowNull: true
+    },
+    avatarUrl: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+      field: 'avatar_url'
+    },
+    location: {
+      type: DataTypes.STRING(150),
+      allowNull: true
+    },
+    isPublic: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      field: 'is_public'
     }
   },
   {

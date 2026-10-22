@@ -1,18 +1,192 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgis/postgis:16-3.4-alpine
     container_name: fishmap-postgres
-    env_file:
-      - ./backend/services/auth/.env
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
     ports:
       - "5434:5432"
     volumes:
       - fishmap_postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
       interval: 5s
       timeout: 5s
       retries: 10
+
+  gateway:
+    build:
+      context: ./backend/gateway
+    container_name: fishmap-gateway
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: 4000
+      AUTH_SERVICE_URL: http://auth:4001
+      USERS_SERVICE_URL: http://users:4002
+      FISHING_SERVICE_URL: http://fishing:4003
+      INVENTORY_SERVICE_URL: http://inventory:4004
+      SOCIAL_SERVICE_URL: http://social:4005
+      CHAT_SERVICE_URL: http://chat:4006
+      WEATHER_SERVICE_URL: http://weather:4007
+      AI_SERVICE_URL: http://ai:4008
+    depends_on:
+      - auth
+      - users
+      - fishing
+      - inventory
+      - social
+      - chat
+      - weather
+      - ai
+
+  auth:
+    build:
+      context: ./backend/services/auth
+    container_name: fishmap-auth
+    ports:
+      - "4001:4001"
+    environment:
+      PORT: 4001
+      NODE_ENV: development
+      AUTH_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/fishmap_auth
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: fishmap_auth
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      JWT_ACCESS_SECRET: fishmap-default-dev-jwt-access-secret-32b
+      JWT_REFRESH_SECRET: fishmap-default-dev-jwt-refresh-secret-32b
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  users:
+    build:
+      context: ./backend/services/users
+    container_name: fishmap-users
+    ports:
+      - "4002:4002"
+    environment:
+      PORT: 4002
+      NODE_ENV: development
+      USERS_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/fishmap_users
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: fishmap_users
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      JWT_ACCESS_SECRET: fishmap-default-dev-jwt-access-secret-32b
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  fishing:
+    build:
+      context: ./backend/services/fishing
+    container_name: fishmap-fishing
+    ports:
+      - "4003:4003"
+    environment:
+      PORT: 4003
+      NODE_ENV: development
+      FISHING_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/fishmap_fishing
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: fishmap_fishing
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      JWT_ACCESS_SECRET: fishmap-default-dev-jwt-access-secret-32b
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  inventory:
+    build:
+      context: ./backend/services/inventory
+    container_name: fishmap-inventory
+    ports:
+      - "4004:4004"
+    environment:
+      PORT: 4004
+      NODE_ENV: development
+      INVENTORY_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/fishmap_inventory
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: fishmap_inventory
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      JWT_ACCESS_SECRET: fishmap-default-dev-jwt-access-secret-32b
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  social:
+    build:
+      context: ./backend/services/social
+    container_name: fishmap-social
+    ports:
+      - "4005:4005"
+    environment:
+      PORT: 4005
+      NODE_ENV: development
+      SOCIAL_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/fishmap_social
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: fishmap_social
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      JWT_ACCESS_SECRET: fishmap-default-dev-jwt-access-secret-32b
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  chat:
+    build:
+      context: ./backend/services/chat
+    container_name: fishmap-chat
+    ports:
+      - "4006:4006"
+    environment:
+      PORT: 4006
+      NODE_ENV: development
+      CHAT_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/fishmap_chat
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: fishmap_chat
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      JWT_ACCESS_SECRET: fishmap-default-dev-jwt-access-secret-32b
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  weather:
+    build:
+      context: ./backend/services/weather
+    container_name: fishmap-weather
+    ports:
+      - "4007:4007"
+    environment:
+      PORT: 4007
+      NODE_ENV: development
+      WEATHER_PROVIDER: open-meteo
+      WEATHER_CACHE_TTL_MINUTES: 30
+
+  ai:
+    build:
+      context: ./backend/services/ai
+    container_name: fishmap-ai
+    ports:
+      - "4008:4008"
+    environment:
+      PORT: 4008
+      NODE_ENV: development
+      AI_PROVIDER: auto
+      JWT_ACCESS_SECRET: fishmap-default-dev-jwt-access-secret-32b
 
 volumes:
   fishmap_postgres_data:

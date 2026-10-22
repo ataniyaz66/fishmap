@@ -4,7 +4,11 @@ const {
   authServiceUrl,
   usersServiceUrl,
   fishingServiceUrl,
-  inventoryServiceUrl
+  inventoryServiceUrl,
+  socialServiceUrl,
+  chatServiceUrl,
+  weatherServiceUrl,
+  aiServiceUrl
 } = require('../config/env');
 
 const router = express.Router();
@@ -35,6 +39,26 @@ router.use(
 router.use(
   '/api/v1/inventory',
   createServiceProxy(inventoryServiceUrl, '/api/v1/inventory')
+);
+
+router.use(
+  '/api/v1/social',
+  createServiceProxy(socialServiceUrl, '/api/v1/social')
+);
+
+router.use(
+  '/api/v1/chat',
+  createServiceProxy(chatServiceUrl, '/api/v1/chat')
+);
+
+router.use(
+  '/api/v1/weather',
+  createServiceProxy(weatherServiceUrl, '/api/v1/weather')
+);
+
+router.use(
+  '/api/v1/ai',
+  createServiceProxy(aiServiceUrl, '/api/v1/ai')
 );
 
 module.exports = router;

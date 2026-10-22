@@ -1,0 +1,11 @@
+node_modules
+.git
+.github
+*.log
+.env
+.env.*
+!.env.example
+tmp
+temp
+coverage
+frontend/flutter_app

@@ -3,6 +3,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const spotsRoutes = require('./routes/spots.routes');
 const catchesRoutes = require('./routes/catches.routes');
+const sessionsRoutes = require('./routes/sessions.routes');
+const analyticsRoutes = require('./routes/analytics.routes');
 const {
   notFoundHandler,
   errorHandler
@@ -22,7 +24,10 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/api/v1/fishing/spots', spotsRoutes);
+app.use('/api/v1/fishing/sessions', sessionsRoutes);
+app.use('/api/v1/fishing/analytics', analyticsRoutes);
 app.use('/api/v1/fishing', catchesRoutes);
+
 app.use(notFoundHandler);
 app.use(errorHandler);
 

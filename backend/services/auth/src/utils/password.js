@@ -1,0 +1,17 @@
+const bcrypt = require('bcryptjs');
+
+const SALT_ROUNDS = 12;
+
+async function hashPassword(plaintext) {
+  return bcrypt.hash(plaintext, SALT_ROUNDS);
+}
+
+async function comparePassword(plaintext, hash) {
+  if (!plaintext || !hash) return false;
+  return bcrypt.compare(plaintext, hash);
+}
+
+module.exports = {
+  hashPassword,
+  comparePassword
+};

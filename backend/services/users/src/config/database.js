@@ -1,33 +1,19 @@
 const { Sequelize } = require('sequelize');
-require('./env');
+const { usersDatabaseUrl, nodeEnv } = require('./env');
 
-const requiredVariables = [
-  'DB_HOST',
-  'DB_NAME',
-  'DB_USER',
-  'DB_PASSWORD'
-];
-
-const missingVariables = requiredVariables.filter(
-  (variable) => !process.env[variable]
+const dbUrl = usersDatabaseUrl || (
+  process.env.DB_USER && process.env.DB_PASSWORD && process.env.DB_HOST && process.env.DB_NAME
+    ? `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT || 5434}/${process.env.DB_NAME}`
+    : (nodeEnv === 'production' ? null : 'postgresql://fishmap_users:fishmap_users_dev_password@localhost:5434/fishmap_users')
 );
 
-if (missingVariables.length > 0) {
-  throw new Error(
-    `Missing database environment variables: ${missingVariables.join(', ')}`
-  );
+if (!dbUrl) {
+  throw new Error('Missing database configuration: USERS_DATABASE_URL is required in production.');
 }
 
-const sequelize = new Sequelize(
-  process.env.DB_NAME,
-  process.env.DB_USER,
-  process.env.DB_PASSWORD,
-  {
-    dialect: 'postgres',
-    host: process.env.DB_HOST,
-    port: Number(process.env.DB_PORT) || 5432,
-    logging: false
-  }
-);
+const sequelize = new Sequelize(dbUrl, {
+  dialect: 'postgres',
+  logging: false
+});
 
 module.exports = sequelize;

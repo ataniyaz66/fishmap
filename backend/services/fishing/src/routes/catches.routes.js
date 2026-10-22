@@ -1,14 +1,20 @@
 const express = require('express');
 const catchesController = require('../controllers/catches.controller');
+const { authenticateUser, optionalAuth } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
 
 router.route('/spots/:spotId/catches')
-  .post(catchesController.create)
-  .get(catchesController.listBySpotId);
+  .post(authenticateUser, catchesController.create)
+  .get(optionalAuth, catchesController.listBySpotId);
+
+router.route('/catches')
+  .post(authenticateUser, catchesController.create)
+  .get(optionalAuth, catchesController.listAll);
+
 router.route('/catches/:id')
-  .get(catchesController.getById)
-  .patch(catchesController.update)
-  .delete(catchesController.remove);
+  .get(optionalAuth, catchesController.getById)
+  .patch(authenticateUser, catchesController.update)
+  .delete(authenticateUser, catchesController.remove);
 
 module.exports = router;

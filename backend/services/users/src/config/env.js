@@ -5,5 +5,6 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 module.exports = {
   port: Number(process.env.PORT) || 4002,
-  nodeEnv: process.env.NODE_ENV || 'development'
+  nodeEnv: process.env.NODE_ENV || 'development',
+  usersDatabaseUrl: process.env.USERS_DATABASE_URL
 };

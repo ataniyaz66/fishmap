@@ -47,12 +47,30 @@ module.exports = (sequelize, DataTypes) => sequelize.define(
         len: [0, 100]
       }
     },
+    color: {
+      type: DataTypes.STRING(50),
+      allowNull: true
+    },
+    weightGrams: {
+      type: DataTypes.FLOAT,
+      allowNull: true,
+      field: 'weight_grams'
+    },
+    photoUrl: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+      field: 'photo_url'
+    },
+    notes: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
     visibility: {
       type: DataTypes.STRING(20),
       allowNull: false,
       defaultValue: 'private',
       validate: {
-        isIn: [['private', 'friends']]
+        isIn: [['private', 'friends', 'public']]
       }
     }
   },

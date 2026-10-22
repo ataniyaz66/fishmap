@@ -8,10 +8,19 @@ module.exports = (sequelize, DataTypes) => sequelize.define(
     },
     spotId: {
       type: DataTypes.UUID,
-      allowNull: false,
+      allowNull: true,
       field: 'spot_id',
       references: {
         model: 'fishing_spots',
+        key: 'id'
+      }
+    },
+    sessionId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'session_id',
+      references: {
+        model: 'fishing_sessions',
         key: 'id'
       }
     },
@@ -49,6 +58,20 @@ module.exports = (sequelize, DataTypes) => sequelize.define(
     notes: {
       type: DataTypes.TEXT,
       allowNull: true
+    },
+    photoUrls: {
+      type: DataTypes.JSON,
+      allowNull: false,
+      defaultValue: [],
+      field: 'photo_urls'
+    },
+    visibility: {
+      type: DataTypes.STRING(20),
+      allowNull: false,
+      defaultValue: 'public',
+      validate: {
+        isIn: [['public', 'friends', 'private']]
+      }
     },
     caughtAt: {
       type: DataTypes.DATE,

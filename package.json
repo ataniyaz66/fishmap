@@ -1,0 +1,30 @@
+{
+  "name": "fishmap-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FishMap Monorepo - Cross-platform social fishing application",
+  "scripts": {
+    "dev:all": "node scripts/dev-all.js",
+    "dev:all:nowatch": "node scripts/dev-all.js --no-watch",
+    "infra:up": "docker compose up -d postgres",
+    "infra:down": "docker compose stop postgres",
+    "infra:status": "docker compose ps postgres",
+    "db:migrate:all": "node scripts/db-migrate-all.js",
+    "health:check": "node scripts/health-check.js",
+    "test": "npm test --prefix backend/services/auth && npm test --prefix backend/services/users && npm test --prefix backend/services/fishing && npm test --prefix backend/services/inventory && npm test --prefix backend/services/social && npm test --prefix backend/services/chat && npm test --prefix backend/services/weather && npm test --prefix backend/services/ai && npm test --prefix backend/gateway",
+    "test:auth": "npm test --prefix backend/services/auth",
+    "test:users": "npm test --prefix backend/services/users",
+    "test:fishing": "npm test --prefix backend/services/fishing",
+    "test:inventory": "npm test --prefix backend/services/inventory",
+    "test:social": "npm test --prefix backend/services/social",
+    "test:chat": "npm test --prefix backend/services/chat",
+    "test:weather": "npm test --prefix backend/services/weather",
+    "test:ai": "npm test --prefix backend/services/ai",
+    "test:gateway": "npm test --prefix backend/gateway",
+    "flutter:test": "powershell -Command \"cd frontend/flutter_app; flutter test\"",
+    "flutter:analyze": "powershell -Command \"cd frontend/flutter_app; flutter analyze\"",
+    "flutter:run": "powershell -Command \"cd frontend/flutter_app; flutter run\"",
+    "flutter:run:web": "powershell -Command \"cd frontend/flutter_app; flutter run -d chrome\"",
+    "flutter:build:web": "powershell -Command \"cd frontend/flutter_app; flutter build web --no-tree-shake-icons\""
+  }
+}

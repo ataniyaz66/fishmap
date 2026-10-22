@@ -1,14 +1,16 @@
 const express = require('express');
 const inventoryController = require('../controllers/inventory.controller');
+const { authenticateUser, optionalAuth } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
 
 router.route('/items')
-  .get(inventoryController.listItems)
-  .post(inventoryController.createItem);
+  .get(optionalAuth, inventoryController.listItems)
+  .post(authenticateUser, inventoryController.createItem);
+
 router.route('/items/:id')
-  .get(inventoryController.getItem)
-  .patch(inventoryController.updateItem)
-  .delete(inventoryController.deleteItem);
+  .get(optionalAuth, inventoryController.getItem)
+  .patch(authenticateUser, inventoryController.updateItem)
+  .delete(authenticateUser, inventoryController.deleteItem);
 
 module.exports = router;

@@ -43,6 +43,18 @@ module.exports = (sequelize, DataTypes) => sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
       field: 'water_type'
+    },
+    region: {
+      type: DataTypes.STRING(150),
+      allowNull: true
+    },
+    visibility: {
+      type: DataTypes.STRING(20),
+      allowNull: false,
+      defaultValue: 'public',
+      validate: {
+        isIn: [['public', 'friends', 'private']]
+      }
     }
   },
   {
