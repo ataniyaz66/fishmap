@@ -1,6 +1,110 @@
 # FishMap
 
-FishMap is a modern cross-platform fishing social network for recreational anglers. It combines interactive fishing maps, catch logging, tackle inventory management, social sharing, weather forecasts, and AI-powered fishing assistance.
+**Development of a Cross-Platform Intelligent System for Planning, Tracking and Analyzing Recreational Fishing**
+
+- 🇷🇺 Разработка кроссплатформенной интеллектуальной системы для планирования, отслеживания и анализа любительской рыбалки
+- 🇰🇿 Әуесқой балық аулауды жоспарлауға, бақылауға және талдауға арналған кроссплатформалық зияткерлік жүйені әзірлеу
+
+FishMap is a diploma project: a cross-platform fishing social network for recreational anglers. It combines interactive fishing maps, catch logging, tackle inventory management, social sharing, weather forecasts, and AI-powered fishing assistance.
+
+## Problem statement
+
+Recreational anglers keep the information they need in many unrelated places: spots are remembered or saved in notes and messengers, catches and equipment are not recorded systematically, regulations (seasons, size and catch limits, protected species) must be searched for separately, and communication with other anglers happens in general-purpose chats. As a result, it is hard to plan a trip, to analyze one's own results, and to find reliable information and like-minded people in one place.
+
+## Target users
+
+- Amateur anglers who want to keep records of fishing spots, catches and equipment.
+- Groups of friends who fish together and share spots, catches and trips.
+- Beginners who need help identifying fish species and information about fishing rules.
+
+## Aim and expected outcomes
+
+**Aim:** to develop a cross-platform intelligent system that helps anglers plan fishing trips, record catches and analyze their results.
+
+**Expected outcomes:**
+
+- A mobile application with an interactive map, fishing spots, catches with photos, equipment inventory, friends and statistics.
+- A backend with an API, a database, authentication and data processing.
+- A model that suggests the fish species from a photo, integrated into the application.
+- Personalized recommendations.
+- Test results, technical and user documentation.
+
+## Team and responsibilities
+
+| Member | GitHub | Responsibility |
+|---|---|---|
+| Bibifatima Biysheva | [@fatimabisesheva](https://github.com/fatimabisesheva) | UI/UX design, mobile application (interactive map, user profile, friends, inventory, catch photos and information), fish species recognition from a photo, participation in personalized recommendations, client–backend and AI integration, mobile testing, user documentation |
+| Ataniyaz Mutigolla | [@ataniyaz66](https://github.com/ataniyaz66) | Server architecture, database design, authentication and authorization, REST API (profiles, spots, catches, friends, equipment), data storage and processing, integration with map services and the client, participation in integration of intelligent functions, backend testing, technical documentation |
+
+**Supervisor:** Alua Myrzakerimova
+
+## Project scope
+
+Planned feature priorities (to be refined in the requirements specification):
+
+**Must have**
+
+- Registration and authentication, user profile
+- Interactive map and fishing spots with photos
+- Catch records with photos and details
+- Lure / equipment inventory with privacy settings
+- Fish species recognition from a photo
+- Mobile application and backend API
+
+**Should have**
+
+- Friends and search for anglers by interests
+- Personal fishing statistics and fishing journal
+- Weather for a place and time
+- Fishing regulations: seasons, protected species, size and catch limits
+- Personalized recommendations
+- Notifications
+
+**Could have**
+
+- Fishing groups, group chats, shared spots and catches, group trips and events
+- Leaderboards, monthly challenges, top anglers by location
+- Web/desktop dashboard, admin panel, reports and moderation
+
+**Out of scope at this stage:** a production-ready release for public use.
+
+## Current status
+
+Analysis and design stage. The backend microservices and API gateway are implemented (see [Architecture](#architecture)); the mobile client is in preparation.
+
+| Deliverable | Location | Status |
+|---|---|---|
+| Project proposal and scope | [docs/proposal.md](docs/proposal.md) | In progress |
+| Evidence of relevance (interviews) | [docs/relevance-evidence.md](docs/relevance-evidence.md) | In progress |
+| Literature review | [docs/](docs/) | In progress |
+| Existing system comparison | [docs/](docs/) | In progress |
+| Technology comparison | [docs/](docs/) | In progress |
+| Requirements specification | [docs/](docs/) | In progress |
+| Architecture and diagrams | [diagrams/](diagrams/), [docs/architecture.md](docs/architecture.md) | In progress |
+| UX prototype | [docs/](docs/) | In progress |
+| Verification and evaluation plan | [docs/](docs/) | In progress |
+| Project management and risks | [docs/](docs/) | In progress |
+| Supervisor feedback | [docs/](docs/) | In progress |
+
+## Links
+
+- YouTrack project: [https://ataniyaz66.youtrack.cloud/projects/FIS](https://ataniyaz66.youtrack.cloud/projects/FIS)
+- UX prototype (Figma): [add link]
+- Documentation: [docs/](docs/)
+- Diagrams: [diagrams/](diagrams/)
+
+## Development workflow
+
+- Every meaningful work item is a YouTrack task with a responsible student, expected outcome, acceptance criteria and deadline.
+- Branch names include the task ID, e.g. `FIS-11-readme`.
+- Commit messages start with the task ID, e.g. `FIS-11: Update README with project description and scope`.
+- Changes go through Pull Requests that explain the change, reference the YouTrack task and describe how the work was checked.
+- Another team member reviews each Pull Request before it is merged into `main`.
+- Each student commits only from their own account.
+- Passwords, API keys and personal data are never committed; configuration examples use placeholder values.
+- Pre-defense submissions are tagged: `pre-defense-1`, `pre-defense-2`, `final-pre-defense`.
+
+---
 
 ## Architecture
 
@@ -19,6 +123,8 @@ FishMap uses a modular microservices monorepo architecture:
 | **AI Recommendation** | `backend/services/ai` | `4008` | Intelligent lure recommendations matching personal tackle inventory, angling technique assistant (Gemini 1.5 Flash + Rule-based fallback engine). |
 | **PostgreSQL / PostGIS** | `infrastructure/postgres` | `5434` (host) | Dedicated per-service databases in a single PostGIS container (`fishmap_auth`, `fishmap_users`, `fishmap_fishing`, etc.). |
 | **Frontend** | `frontend/flutter_app` | — | Cross-platform Flutter client. |
+
+The final technology choices and their justification are documented in the technology comparison (see `docs/`).
 
 ---
 
