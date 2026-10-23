@@ -1,0 +1,27 @@
+@startuml system-context
+title FishMap - System Context Diagram
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam rectangle {
+  RoundCorner 12
+}
+
+actor "Angler\n(registered user)" as Angler
+
+rectangle "FishMap system\n\nMobile application, backend (API gateway\nand services), database, AI module" as FishMap #DDEEFF
+
+rectangle "Map provider\n(map tiles and geodata)" as MapProvider #F5F5F5
+rectangle "Weather service\n(Open-Meteo API)" as Weather #F5F5F5
+rectangle "External AI service\n(LLM API, optional)" as LLM #F5F5F5
+
+Angler --> FishMap : plans trips, records spots,\ncatches and equipment,\nviews statistics and recommendations
+FishMap --> Angler : map, weather, species suggestions,\nrecommendations, notifications
+FishMap --> MapProvider : requests map data
+FishMap --> Weather : requests weather data
+FishMap --> LLM : requests for fishing assistant\n(optional)
+
+legend bottom
+  Blue: system developed in this project. Grey: external systems.
+endlegend
+@enduml
