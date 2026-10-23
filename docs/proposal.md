@@ -11,8 +11,8 @@
 
 | Member | Responsibility |
 |---|---|
-| Bibifatima Biysheva | UI/UX design, mobile application, fish species recognition from a photo, personalized recommendations (participation), client–backend and AI integration, mobile testing, user documentation |
-| Ataniyaz Mutigolla | Server architecture, database design, authentication, REST API, data storage and processing, integration with map services, backend testing, technical documentation |
+| Bibifatima Biysheva | UI/UX design, cross-platform client application, fish species recognition model from a photo, participation in personalized recommendations, client–backend and AI integration, client testing, user documentation |
+| Ataniyaz Mutigolla | Server architecture (API Gateway and domain microservices), database design (per-service logical databases and PostGIS spatial storage), authentication and authorization, domain REST APIs (profiles, spots, catches, inventory, social features, chat), external service integrations (weather and AI assistance), backend testing, technical documentation |
 
 **Supervisor:** Alua Myrzakerimova
 
@@ -41,66 +41,78 @@ To develop a cross-platform intelligent system that helps anglers plan fishing t
 
 1. Analyze the problem domain: interview potential users and review scientific literature and existing fishing applications.
 2. Define functional and non-functional requirements with priorities and acceptance criteria.
-3. Design the system architecture, the database and the user interface (diagrams and a prototype of key scenarios).
-4. Develop the backend: authentication, REST API for profiles, spots, catches, friends and equipment, data storage.
-5. Develop the mobile application: interactive map, profile, friends, inventory, catches with photos.
-6. Develop and integrate a model that suggests the fish species from a photo; implement personalized recommendations.
-7. Test the system and evaluate the results against defined metrics and a baseline solution.
-8. Prepare technical and user documentation.
+3. Design the system architecture, database schemas, and user interface (architectural diagrams, data isolation models, and UI prototypes of key scenarios).
+4. Develop the backend architecture and domain services:
+   - Implement an API Gateway providing a unified reverse-proxy entry point, request routing, and standardized error response normalization.
+   - Implement authentication and access control with password hashing, short-lived JWT access tokens, rotating refresh tokens, and cross-service identity propagation.
+   - Design and manage per-service logical databases enforcing data isolation without cross-database foreign keys, employing PostGIS for geospatial data.
+   - Develop REST APIs for core domain services: user profiles, fishing spots with geospatial bounding-box and radius queries, fishing sessions, catches, and tackle inventory.
+   - Develop social and communication services supporting community posts, comments, likes, friendships, and private direct messaging.
+   - Integrate external services: weather forecasting with local in-memory caching and fishing suitability evaluation, and an AI angling assistant with lure recommendations.
+5. Develop the client application: interactive map, user profile, catch logging with photos, tackle inventory, social feed, and chat.
+6. Develop and integrate intelligent features: a computer vision model for fish species identification from photos, and an AI-driven angling and lure recommendation assistant.
+7. Test the system and evaluate the results: execute automated test suites for backend services and the API Gateway, perform client and end-to-end integration testing, and assess accuracy against defined metrics.
+8. Prepare technical documentation (architecture, database schema, API contracts) and user documentation.
 
 ## 7. Expected outcomes
 
-- A working mobile application integrated with the backend.
-- A backend with a database, authentication and an API.
-- A fish species recognition model embedded in the application.
-- Personalized recommendations based on user activity.
-- Requirements, architecture, test results and documentation stored in the project repository.
-- Individual results of each team member that can be assessed separately (mobile client and AI component; backend and data layer).
+- A working cross-platform client application with interactive maps, catch recording, tackle management, and social interactions.
+- A modular backend architecture featuring an API Gateway and dedicated domain microservices (Auth, Users, Fishing, Inventory, Social, Chat, Weather, and AI).
+- A documented and containerized database layer utilizing PostgreSQL 16 with PostGIS, maintaining per-service logical data isolation and migration scripts.
+- Secure token-based authentication and authorization with credential hashing and session lifecycle management.
+- Integration with external weather services (Open-Meteo API with localized caching and fishing suitability scoring) and external LLM services for angling advice and lure selection.
+- A computer vision model capable of classifying fish species from caught fish photographs.
+- Comprehensive automated test suites (unit and integration tests for backend services and gateway) and a unified health check verification runner.
+- Complete documentation: requirements specification, architecture design, database documentation, API specifications, and user guides stored in the repository.
+- Clear separation of individual results allowing independent academic assessment (mobile client and computer vision model by Bibifatima Biysheva; server architecture, data layer, microservices, and integrations by Ataniyaz Mutigolla).
 
 ## 8. Project scope
 
 **Planned feature priorities** (to be refined in the requirements specification):
 
 **Must have**
-- Registration, authentication, user profile
-- Interactive map and fishing spots with photos
-- Catch records with photos and details
-- Equipment (lure) inventory with privacy settings
-- Fish species recognition from a photo
-- Mobile application and backend API
+- User registration, authentication, and profile management
+- Interactive map and fishing spots with geospatial coordinates, details, and photos
+- Catch logging with species, weight/length measurements, bait, session linkage, and photos
+- Tackle and lure inventory management with privacy visibility controls
+- Cross-platform client application and backend API Gateway with core REST services
+- Computer vision model for fish species identification from a photo
 
 **Should have**
-- Friends and search for anglers by interests
-- Personal statistics and fishing journal
-- Weather for a place and time
-- Fishing regulations: seasons, protected species, size and catch limits
-- Personalized recommendations
-- Notifications
+- Angler friendships and community social feed (posts, photo sharing, comments, and likes)
+- One-on-one direct messaging between anglers
+- Meteorological forecast integration (weather conditions and fishing suitability estimation for spot coordinates)
+- Conversational AI fishing assistant and lure recommendation matching tackle inventory
+- Personal fishing statistics and fishing journal history
+- Fishing regulations awareness (seasons, protected species, size and catch limits)
+- Notification system for social interactions and friend requests
 
 **Could have**
-- Fishing groups, group chats, shared spots and catches, group trips and events
-- Leaderboards, monthly challenges, top anglers by location
-- Web/desktop dashboard, admin panel, reports and moderation
+- Fishing groups, group chats, shared spots, and organized group trips
+- Leaderboards, seasonal challenges, and top catches by water body
+- Administrative dashboard, user moderation, and report review tools
+- Offline data synchronization for spots and catches in remote areas without network connectivity
 
-**Out of scope:** a production-ready release for public use (app store publication, high-load operation, legal review of fishing regulation data for all regions).
+**Out of scope:** commercial production deployment, public app store publication, real-time massive-scale clustering, and legal certification of fishing regulations across all jurisdictions.
 
 ## 9. Engineering complexity
 
-The project combines several non-trivial engineering areas:
+The project combines several non-trivial engineering challenges:
 
-- Client–server architecture with authentication and a REST API.
-- Geospatial data: an interactive map and location-based records.
-- Computer vision: classification of fish species from photos, including dataset preparation and model evaluation.
-- Recommendation functionality based on user data.
-- Privacy settings for equipment and places.
-- Integration of the mobile client, backend and AI component.
+- **Microservices architecture and API Gateway:** Designing a modular monorepo with an API Gateway that abstracts downstream services, standardizes error responses, and handles request routing.
+- **Data isolation and persistence:** Enforcing a Database-per-Service model using PostgreSQL 16 without distributed transactions or cross-database foreign keys, relying on external UUIDs for loose coupling.
+- **Geospatial querying:** Storing and querying spatial coordinates using PostGIS, supporting efficient bounding-box filtering and radius-based spot searches on interactive maps.
+- **Authentication and security:** Implementing token-based authentication with bcrypt credential hashing, short-lived JWT access tokens, rotating refresh tokens with revocation, and secure identity propagation.
+- **External integrations and resilience:** Interfacing with third-party APIs (Open-Meteo for meteorological data, Google Gemini for conversational advice) with local caching, timeouts, and fallback mechanisms.
+- **Computer vision and AI assistance:** Training and deploying an image classification model for fish species recognition, alongside conversational intelligence tailored to regional water bodies and tackle inventory.
+- **Multi-level privacy controls:** Implementing visibility policies (`public`, `friends`, `private`) consistently across fishing spots, catches, equipment, and social posts.
 
 ## 10. Risks to scope
 
 | Risk | Mitigation |
 |---|---|
-| The feature list is large for a team of two | Prioritization (Must / Should / Could); social and competitive features are optional |
-| Lack of a suitable dataset for fish species recognition | Review existing datasets early; reduce the number of species; document accuracy limits |
-| Dependence between the mobile client and backend | Agree on the API contract early; use mock data for client development |
+| The feature list is large for a team of two | Strict MoSCoW prioritization; social interactions and advanced AI assistance are secondary to core spot and catch tracking |
+| Lack of a suitable dataset for fish species recognition | Review existing datasets early; restrict the initial classification scope to common regional species; document accuracy limits |
+| Dependence between client and backend development | Define clear API contracts early; maintain independent service mocks and containerized local development environments |
 
 *A full risk register is maintained in `project-management.md`.*
