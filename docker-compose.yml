@@ -3,16 +3,16 @@ services:
     image: postgis/postgis:16-3.4-alpine
     container_name: fishmap-postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in root .env}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
     ports:
-      - "5434:5432"
+      - "${POSTGRES_PORT:-5434}:5432"
     volumes:
       - fishmap_postgres_data:/var/lib/postgresql/data
       - ./infrastructure/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -22,17 +22,17 @@ services:
       context: ./backend/gateway
     container_name: fishmap-gateway
     ports:
-      - "4000:4000"
+      - "${GATEWAY_PORT:-4000}:4000"
     environment:
       PORT: 4000
-      AUTH_SERVICE_URL: http://auth:4001
-      USERS_SERVICE_URL: http://users:4002
-      FISHING_SERVICE_URL: http://fishing:4003
-      INVENTORY_SERVICE_URL: http://inventory:4004
-      SOCIAL_SERVICE_URL: http://social:4005
-      CHAT_SERVICE_URL: http://chat:4006
-      WEATHER_SERVICE_URL: http://weather:4007
-      AI_SERVICE_URL: http://ai:4008
+      AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:-http://auth:4001}
+      USERS_SERVICE_URL: ${USERS_SERVICE_URL:-http://users:4002}
+      FISHING_SERVICE_URL: ${FISHING_SERVICE_URL:-http://fishing:4003}
+      INVENTORY_SERVICE_URL: ${INVENTORY_SERVICE_URL:-http://inventory:4004}
+      SOCIAL_SERVICE_URL: ${SOCIAL_SERVICE_URL:-http://social:4005}
+      CHAT_SERVICE_URL: ${CHAT_SERVICE_URL:-http://chat:4006}
+      WEATHER_SERVICE_URL: ${WEATHER_SERVICE_URL:-http://weather:4007}
+      AI_SERVICE_URL: ${AI_SERVICE_URL:-http://ai:4008}
     depends_on:
       - auth
       - users
@@ -48,18 +48,18 @@ services:
       context: ./backend/services/auth
     container_name: fishmap-auth
     ports:
-      - "4001:4001"
+      - "${AUTH_PORT:-4001}:4001"
     environment:
       PORT: 4001
-      NODE_ENV: development
-      AUTH_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/fishmap_auth
-      DB_HOST: postgres
+      NODE_ENV: ${NODE_ENV:-development}
+      AUTH_DATABASE_URL: ${AUTH_DATABASE_URL:-postgresql://${DB_USER:-postgres}:${DB_PASSWORD:?DB_PASSWORD must be set in root .env}@postgres:5432/fishmap_auth}
+      DB_HOST: ${DB_HOST:-postgres}
       DB_PORT: 5432
       DB_NAME: fishmap_auth
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      JWT_ACCESS_SECRET: fishmap-default-dev-jwt-access-secret-32b
-      JWT_REFRESH_SECRET: fishmap-default-dev-jwt-refresh-secret-32b
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in root .env}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET must be set in root .env}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET must be set in root .env}
     depends_on:
       postgres:
         condition: service_healthy
@@ -69,17 +69,17 @@ services:
       context: ./backend/services/users
     container_name: fishmap-users
     ports:
-      - "4002:4002"
+      - "${USERS_PORT:-4002}:4002"
     environment:
       PORT: 4002
-      NODE_ENV: development
-      USERS_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/fishmap_users
-      DB_HOST: postgres
+      NODE_ENV: ${NODE_ENV:-development}
+      USERS_DATABASE_URL: ${USERS_DATABASE_URL:-postgresql://${DB_USER:-postgres}:${DB_PASSWORD:?DB_PASSWORD must be set in root .env}@postgres:5432/fishmap_users}
+      DB_HOST: ${DB_HOST:-postgres}
       DB_PORT: 5432
       DB_NAME: fishmap_users
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      JWT_ACCESS_SECRET: fishmap-default-dev-jwt-access-secret-32b
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in root .env}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET must be set in root .env}
     depends_on:
       postgres:
         condition: service_healthy
@@ -89,17 +89,17 @@ services:
       context: ./backend/services/fishing
     container_name: fishmap-fishing
     ports:
-      - "4003:4003"
+      - "${FISHING_PORT:-4003}:4003"
     environment:
       PORT: 4003
-      NODE_ENV: development
-      FISHING_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/fishmap_fishing
-      DB_HOST: postgres
+      NODE_ENV: ${NODE_ENV:-development}
+      FISHING_DATABASE_URL: ${FISHING_DATABASE_URL:-postgresql://${DB_USER:-postgres}:${DB_PASSWORD:?DB_PASSWORD must be set in root .env}@postgres:5432/fishmap_fishing}
+      DB_HOST: ${DB_HOST:-postgres}
       DB_PORT: 5432
       DB_NAME: fishmap_fishing
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      JWT_ACCESS_SECRET: fishmap-default-dev-jwt-access-secret-32b
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in root .env}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET must be set in root .env}
     depends_on:
       postgres:
         condition: service_healthy
@@ -109,17 +109,17 @@ services:
       context: ./backend/services/inventory
     container_name: fishmap-inventory
     ports:
-      - "4004:4004"
+      - "${INVENTORY_PORT:-4004}:4004"
     environment:
       PORT: 4004
-      NODE_ENV: development
-      INVENTORY_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/fishmap_inventory
-      DB_HOST: postgres
+      NODE_ENV: ${NODE_ENV:-development}
+      INVENTORY_DATABASE_URL: ${INVENTORY_DATABASE_URL:-postgresql://${DB_USER:-postgres}:${DB_PASSWORD:?DB_PASSWORD must be set in root .env}@postgres:5432/fishmap_inventory}
+      DB_HOST: ${DB_HOST:-postgres}
       DB_PORT: 5432
       DB_NAME: fishmap_inventory
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      JWT_ACCESS_SECRET: fishmap-default-dev-jwt-access-secret-32b
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in root .env}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET must be set in root .env}
     depends_on:
       postgres:
         condition: service_healthy
@@ -129,17 +129,17 @@ services:
       context: ./backend/services/social
     container_name: fishmap-social
     ports:
-      - "4005:4005"
+      - "${SOCIAL_PORT:-4005}:4005"
     environment:
       PORT: 4005
-      NODE_ENV: development
-      SOCIAL_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/fishmap_social
-      DB_HOST: postgres
+      NODE_ENV: ${NODE_ENV:-development}
+      SOCIAL_DATABASE_URL: ${SOCIAL_DATABASE_URL:-postgresql://${DB_USER:-postgres}:${DB_PASSWORD:?DB_PASSWORD must be set in root .env}@postgres:5432/fishmap_social}
+      DB_HOST: ${DB_HOST:-postgres}
       DB_PORT: 5432
       DB_NAME: fishmap_social
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      JWT_ACCESS_SECRET: fishmap-default-dev-jwt-access-secret-32b
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in root .env}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET must be set in root .env}
     depends_on:
       postgres:
         condition: service_healthy
@@ -149,17 +149,17 @@ services:
       context: ./backend/services/chat
     container_name: fishmap-chat
     ports:
-      - "4006:4006"
+      - "${CHAT_PORT:-4006}:4006"
     environment:
       PORT: 4006
-      NODE_ENV: development
-      CHAT_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/fishmap_chat
-      DB_HOST: postgres
+      NODE_ENV: ${NODE_ENV:-development}
+      CHAT_DATABASE_URL: ${CHAT_DATABASE_URL:-postgresql://${DB_USER:-postgres}:${DB_PASSWORD:?DB_PASSWORD must be set in root .env}@postgres:5432/fishmap_chat}
+      DB_HOST: ${DB_HOST:-postgres}
       DB_PORT: 5432
       DB_NAME: fishmap_chat
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      JWT_ACCESS_SECRET: fishmap-default-dev-jwt-access-secret-32b
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in root .env}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET must be set in root .env}
     depends_on:
       postgres:
         condition: service_healthy
@@ -169,24 +169,26 @@ services:
       context: ./backend/services/weather
     container_name: fishmap-weather
     ports:
-      - "4007:4007"
+      - "${WEATHER_PORT:-4007}:4007"
     environment:
       PORT: 4007
-      NODE_ENV: development
-      WEATHER_PROVIDER: open-meteo
-      WEATHER_CACHE_TTL_MINUTES: 30
+      NODE_ENV: ${NODE_ENV:-development}
+      WEATHER_PROVIDER: ${WEATHER_PROVIDER:-open-meteo}
+      WEATHER_CACHE_TTL_MINUTES: ${WEATHER_CACHE_TTL_MINUTES:-30}
 
   ai:
     build:
       context: ./backend/services/ai
     container_name: fishmap-ai
     ports:
-      - "4008:4008"
+      - "${AI_PORT:-4008}:4008"
     environment:
       PORT: 4008
-      NODE_ENV: development
-      AI_PROVIDER: auto
-      JWT_ACCESS_SECRET: fishmap-default-dev-jwt-access-secret-32b
+      NODE_ENV: ${NODE_ENV:-development}
+      AI_PROVIDER: ${AI_PROVIDER:-auto}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET must be set in root .env}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.8-flash}
 
 volumes:
   fishmap_postgres_data:
