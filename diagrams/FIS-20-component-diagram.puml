@@ -1,0 +1,196 @@
+@startuml FIS-20-component-diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName "Segoe UI", Arial, sans-serif
+skinparam defaultFontSize 11
+skinparam roundCorner 8
+skinparam shadowing false
+skinparam handwritten false
+
+skinparam title {
+  FontSize 18
+  FontStyle bold
+  FontColor #0F172A
+}
+
+skinparam header {
+  FontSize 10
+  FontColor #64748B
+}
+
+skinparam footer {
+  FontSize 10
+  FontColor #64748B
+}
+
+skinparam package {
+  BackgroundColor #F8FAFC
+  BorderColor #94A3B8
+  BorderThickness 1.5
+  FontColor #0F172A
+  FontStyle bold
+}
+
+skinparam node {
+  BackgroundColor #F1F5F9
+  BorderColor #64748B
+  BorderThickness 1.5
+  FontColor #0F172A
+  FontStyle bold
+}
+
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #0284C7
+  BorderThickness 1.5
+  FontColor #0F172A
+  FontStyle bold
+  ArrowColor #0369A1
+  ArrowFontColor #334155
+  ArrowFontSize 10
+}
+
+skinparam database {
+  BackgroundColor #FEF3C7
+  BorderColor #D97706
+  BorderThickness 1.5
+  FontColor #78350F
+  FontStyle bold
+}
+
+skinparam cloud {
+  BackgroundColor #F0FDF4
+  BorderColor #16A34A
+  BorderThickness 1.5
+  FontColor #14532D
+  FontStyle bold
+}
+
+skinparam note {
+  BackgroundColor #FFFBEB
+  BorderColor #F59E0B
+  FontColor #92400E
+  FontSize 10
+}
+
+header FishMap Architecture Specification | FIS-20 Component Model
+title FishMap Platform - UML Component Diagram (Draft)
+footer Worktree branch: FIS-20-component-diagram | Verified against repository source code | October 2026
+
+note as DraftNotice
+  <b>DRAFT UML COMPONENT DIAGRAM (FIS-20)</b>
+  Verified against repository source code, Docker Compose configuration,
+  Express service routing, and PostgreSQL/PostGIS initialization scripts.
+  All inter-service and external communication paths represent active code.
+end note
+
+' ==============================================================================
+' CLIENT TIER
+' ==============================================================================
+package "Client Tier" {
+  component "FishMap Mobile Client\n<<Flutter Application>>" as MobileClient {
+    component "Map Viewer\n(flutter_map / Leaflet)" as ClientMapModule
+    component "API Client\n(package:http)" as ClientHttpModule
+    component "Feature Providers\n(State Management)" as ClientStateModule
+  }
+}
+
+' ==============================================================================
+' EXTERNAL SERVICES
+' ==============================================================================
+cloud "External Services & APIs" as ExternalCloud {
+  component "OpenStreetMap Tile Server\n<<External Map Tile Provider>>\nhttps://tile.openstreetmap.org" as OsmTileServer
+  component "Open-Meteo Weather API\n<<External Weather Provider>>\nhttps://api.open-meteo.com" as OpenMeteoApi
+  component "Google Gemini API\n<<External LLM Provider>>\nhttps://generativelanguage.googleapis.com\n[Configured Model: gemini-1.5-flash]" as GeminiApi
+}
+
+' ==============================================================================
+' BACKEND SYSTEM
+' ==============================================================================
+package "FishMap Backend System (Docker Environment)" {
+
+  component "API Gateway\n<<Express / Reverse Proxy>>\n[Port: 4000]" as Gateway
+
+  package "User & Social Domain Services" {
+    component "Auth Service\n<<Express / Sequelize>>\n[Port: 4001]" as AuthService
+    component "Users Service\n<<Express / Sequelize>>\n[Port: 4002]" as UsersService
+    component "Social Service\n<<Express / Sequelize>>\n[Port: 4005]" as SocialService
+    component "Chat Service\n<<Express / Sequelize>>\n[Port: 4006]" as ChatService
+  }
+
+  package "Angling, Telemetry & AI Domain Services" {
+    component "Fishing Service\n<<Express / Sequelize / PostGIS>>\n[Port: 4003]" as FishingService
+    component "Inventory Service\n<<Express / Sequelize>>\n[Port: 4004]" as InventoryService
+    component "Weather Service\n<<Express / In-Memory Cache>>\n[Port: 4007]" as WeatherService
+    component "AI Recommendation Service\n<<Express / Dual Engine>>\n[Port: 4008]" as AiService
+  }
+}
+
+' ==============================================================================
+' DATA PERSISTENCE TIER
+' ==============================================================================
+package "Data Persistence Tier (Docker Environment)" {
+  node "PostgreSQL 16 + PostGIS 3.4 Container\n[Host Port: 5434 / Container Port: 5432]" as PostgresContainer {
+    database "fishmap_auth\n(Database-per-service)" as DbAuth
+    database "fishmap_users\n(Database-per-service)" as DbUsers
+    database "fishmap_social\n(Database-per-service)" as DbSocial
+    database "fishmap_chat\n(Database-per-service)" as DbChat
+    database "fishmap_fishing\n<<PostGIS Extension>>" as DbFishing
+    database "fishmap_inventory\n(Database-per-service)" as DbInventory
+  }
+}
+
+' ==============================================================================
+' RELATIONSHIPS & DATA FLOWS
+' ==============================================================================
+
+' Client to External Map Tile Server
+ClientMapModule --> OsmTileServer : HTTPS (Port 443)\nGET /{z}/{x}/{y}.png (OSM Tiles)
+
+' Client to API Gateway
+ClientHttpModule --> Gateway : HTTP / JSON (Port 4000)\n[Bearer JWT Authentication]
+
+' Gateway to User & Social Domain
+Gateway --> AuthService : /api/v1/auth/*\n(HTTP :4001)
+Gateway --> UsersService : /api/v1/users/*\n(HTTP :4002)
+Gateway --> SocialService : /api/v1/social/*\n(HTTP :4005)
+Gateway --> ChatService : /api/v1/chat/*\n(HTTP :4006)
+
+' Gateway to Angling & Intelligence Domain
+Gateway --> FishingService : /api/v1/fishing/*\n(HTTP :4003)
+Gateway --> InventoryService : /api/v1/inventory/*\n(HTTP :4004)
+Gateway --> WeatherService : /api/v1/weather/*\n(HTTP :4007)
+Gateway --> AiService : /api/v1/ai/*\n(HTTP :4008)
+
+' Microservices to Database
+AuthService --> DbAuth : SQL / TCP (:5432)\nSequelize
+UsersService --> DbUsers : SQL / TCP (:5432)\nSequelize
+SocialService --> DbSocial : SQL / TCP (:5432)\nSequelize
+ChatService --> DbChat : SQL / TCP (:5432)\nSequelize
+FishingService --> DbFishing : SQL / TCP (:5432)\nSequelize + PostGIS
+InventoryService --> DbInventory : SQL / TCP (:5432)\nSequelize
+
+' External Provider Connections
+WeatherService --> OpenMeteoApi : HTTPS (Port 443)\nGET /v1/forecast (Telemetry & Daily)
+AiService --> GeminiApi : HTTPS (Port 443)\nPOST /v1beta/models/gemini-1.5-flash:generateContent\n[Offline fallback: RuleBasedAIProvider]
+
+note bottom of WeatherService
+  <b>Stateless Microservice</b>
+  No persistent database connection.
+  Uses in-memory cache (30-min TTL).
+end note
+
+note bottom of AiService
+  <b>Dual-Engine Microservice</b>
+  Primary: Google Gemini REST API.
+  Fallback: Deterministic RuleBasedAIProvider.
+  No persistent database connection.
+end note
+
+note bottom of PostgresContainer
+  <b>Database-per-Service Architecture</b>
+  Each microservice owns an isolated schema and database credentials.
+  The fishing database has the PostGIS spatial extension enabled.
+end note
+
+@enduml
