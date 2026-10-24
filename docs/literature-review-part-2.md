@@ -1,161 +1,156 @@
 # Literature Review, Part 2: Backend Architecture, Geospatial Data, and Social Platforms
 
-**Author:** Rustam Ataniyazov  
+**Author:** Ataniyaz Mutigolla  
 **Task:** FIS-16  
 **Project:** FishMap — Cross-Platform Social Network for Anglers  
-**Scope of this part:** Server-side microservice architecture, API evolution and coupling, geospatial data storage, spatial indexing and queries, and online social network privacy, security, and access control. (Computer vision for fish species identification and recommender systems are reviewed in Part 1 by the co-author in `docs/literature-review-client-ai.md`).
+**Scope:** Microservice architecture and API evolution; geospatial data storage, indexing, and queries; and privacy and access control in online social platforms.
+
+*Part 1, covering fish-species identification and recommender systems, is documented separately in `docs/literature-review-client-ai.md`.*
 
 ---
 
 ## 1. Introduction and Purpose
 
-The primary objective of FishMap is to provide recreational anglers in Kazakhstan and internationally with an integrated platform that combines social interactions (posts, photo sharing, comments, friendships), interactive maps with fishing spots and waterbody telemetry, tackle inventory management, and intelligent fishing advice.
+FishMap is intended to help recreational anglers in Kazakhstan and elsewhere discover fishing locations, record catches, manage tackle, and interact through posts, comments, and friendships. These features create three important engineering challenges: organizing backend services without creating excessive coupling, querying location data efficiently, and protecting sensitive information such as private fishing spots.
 
-While Part 1 of the literature review established the scientific foundation for on-device and server-side fish species classification and large language model (LLM) advisory workflows, this second part focuses on the foundational engineering and data layers of the FishMap platform. Specifically, it reviews peer-reviewed scientific literature across three core research areas:
-1. **Backend and Microservice Architecture:** Decomposition of system capabilities into domain services, inter-service coupling, API evolution strategies, and maintenance overheads in distributed cloud-native systems.
-2. **Geospatial Data Storage, Indexing, and Spatial Queries:** Spatial indexing mechanisms, storage layouts, performance tradeoffs between write-heavy ingestion and multi-dimensional range/k-nearest-neighbor (k-NN) queries, and topological knowledge graph structures.
-3. **Social Platforms, Privacy, and Security:** Threat models in online social networks (OSNs), cross-platform profiling risks, location privacy paradoxes, metadata exposure (e.g., EXIF coordinates in catch photos), and fine-grained access control mechanisms.
+This review examines seven peer-reviewed publications from 2021–2024. It uses them to inform possible design decisions for FishMap, while distinguishing findings reported by the studies from proposed implementation choices. The review does not treat a feature as implemented unless its presence has been verified in the project code or deployment.
 
-The goal of this review is to derive concrete, evidence-based architectural decisions and design patterns for the FishMap backend and database infrastructure, ensuring the system remains scalable, secure, and respectful of angler privacy.
+The research areas are:
 
----
+1. **Backend architecture:** microservice migration, service co-evolution, and API evolution.
+2. **Geospatial data:** spatial indexing and richer relationships between geographic entities.
+3. **Social-platform privacy and security:** profile correlation, location exposure, and access controls.
 
 ## 2. Methodology
 
-### 2.1 Search Strategy and Databases
-The literature search was conducted in October 2026 across major scientific citation indexing databases and digital libraries:
-- **Scopus / ScienceDirect (Elsevier)**
-- **SpringerLink (Springer Nature)**
-- **SpringerOpen / BioMed Central (BMC)**
-- **IEEE Xplore / ACM Digital Library**
-- **arXiv and university institutional open-access repositories** (e.g., Chalmers University of Technology, TU Eindhoven, McMaster University, Klagenfurt University) for verification of open-access author post-prints.
+### 2.1 Search strategy and sources
 
-### 2.2 Search Queries
-Specific keyword combinations and Boolean operators were used to identify relevant peer-reviewed studies:
-- *Area 1 (Backend & Microservices):* `("microservice architecture" OR "microservices") AND ("migration" OR "evolution" OR "API evolution") AND ("empirical study" OR "challenges")`
-- *Area 2 (Geospatial Data & Indexing):* `("spatial indexing" OR "spatial data storage") AND ("LSM" OR "R-tree" OR "geospatial knowledge graph") AND ("spatial queries" OR "performance")`
-- *Area 3 (Social Platforms & Privacy):* `("online social networks" OR "social network data") AND ("security and privacy" OR "privacy threats" OR "location privacy") AND ("sharing" OR "profiling")`
+The literature search was conducted in October 2026 using publisher pages and scholarly records available through Springer Nature, ScienceDirect, PubMed Central, and author-hosted open-access copies. DOI links were used to identify the publications and compare bibliographic details with publisher records.
 
-### 2.3 Inclusion and Exclusion Criteria
-- **Inclusion Criteria:**
-  1. Peer-reviewed scientific journal articles or major conference proceedings.
-  2. Direct relevance to at least one of the three target domains (microservices, spatial data/indexing, social platform privacy/security).
-  3. High publication quality, verified through indexing in Scopus and classification in Scopus CiteScore / SCImago Journal Rank (SJR) quartiles (prioritizing Q1/Q2).
-  4. Publication date predominantly between 2021 and 2026 to capture contemporary software and cloud engineering realities.
-  5. Availability of verified free full-text PDF access via the publisher (Gold Open Access) or a legitimate institutional repository (Green Open Access).
-- **Exclusion Criteria:**
-  1. Non-peer-reviewed blog posts, marketing whitepapers, vendor product pitches, or forum comments.
-  2. Theoretical papers lacking empirical validation, benchmark experiments, or qualitative industrial evaluation.
-  3. Works focused purely on hardware circuits, closed proprietary protocols, or unrelated application domains (e.g., clinical health records without architectural relevance).
-  4. Pirated or copyright-infringing document repositories.
+### 2.2 Search queries
 
----
+The search used combinations of terms such as:
 
-## 3. Analysis Table of Reviewed Publications
+- **Backend and microservices:** `("microservice architecture" OR microservices) AND (migration OR evolution OR API evolution) AND (empirical study OR challenges)`
+- **Geospatial data:** `("spatial indexing" OR "spatial data storage") AND (LSM OR R-tree OR "geospatial knowledge graph") AND ("spatial queries" OR performance)`
+- **Social privacy:** `("online social networks" OR "social network data") AND (privacy OR security OR "location privacy") AND (sharing OR profiling)`
 
-| ID | Full Citation and DOI | Research Area | Scopus Indexing & Quartile | Free Full-Text / PDF Link | Research Approach / Method | Main Findings (as reported by authors) | Limitations | Relevance to FishMap |
-|:---|:---|:---|:---|:---|:---|:---|:---|:---|
-| **S9** | Ayas, H. M., Leitner, P., & Hebig, R. (2023). An empirical study of the systemic and technical migration towards microservices. *Empirical Software Engineering*, 28(4), Article 85. https://doi.org/10.1007/s10664-023-10308-9 | Backend Architecture | Scopus Indexed; SJR 2023: Q1 (0.92, Software); CiteScore 2023: Q1 (85th percentile) | [Publisher Open Access PDF (CC BY 4.0)](https://link.springer.com/content/pdf/10.1007/s10664-023-10308-9.pdf); [PMC10201508](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10201508/) | Qualitative Grounded Theory: 19 semi-structured interviews with software architects + qualitative analysis of 215 StackOverflow discussions on migration challenges. | Identifies 14 migration activities and 53 technical solution outcomes. Shows that microservice migration succeeds only when architectural decomposition is accompanied by systemic infrastructure investments (API gateways, automated service registries, dedicated per-service databases). | Focuses on migration from legacy monoliths rather than greenfield monorepo microservice setups; based on practitioner recollections and developer question boards. | Validates FishMap's architectural structure: an API Gateway routing to bounded domain services (Auth, Users, Fishing, Inventory, Social, Chat, Weather, AI) with dedicated schemas. Warns against splitting code before boundary stabilization. |
-| **S10** | Assunção, W. K. G., Krüger, J., Mosser, S., & Selaoui, S. (2023). How do microservices evolve? An empirical analysis of changes in open-source microservice repositories. *Journal of Systems and Software*, 204, Article 111788. https://doi.org/10.1016/j.jss.2023.111788 | Backend Architecture | Scopus Indexed; SJR 2023: Q1 (0.97, Software / Info Systems); CiteScore 2023: Q1 (90th percentile) | [Author Open Access Repository (TU Eindhoven)](https://jacobkrueger.github.io/assets/papers/Assuncao2023MicroserviceEvolution.pdf); [McMaster MacSphere](https://macsphere.mcmaster.ca/handle/11375/28574) | Empirical repository mining: mixed quantitative change-coupling analysis and qualitative inspection of 7,319 Git commits across 11 open-source microservice systems. | Proves that microservices rarely evolve in total isolation. Many services co-evolve in tightly coupled groups ("tuples"). Identifies frequent "shotgun surgery" commits where a single logical feature update forces coordinated edits across multiple repositories. | Examined public open-source microservice systems on GitHub, which may have looser governance than commercial cloud-native teams; analyzed systems varied in lifecycle maturity. | Strong warning against premature multi-repository fracturing in FishMap. Supports keeping FishMap as a unified monorepo so that cross-service schema or contract migrations (e.g., Social and Users) can be reviewed and tested atomically. |
-| **S11** | Lercher, A., Glock, J., Macho, C., & Pinzger, M. (2024). Microservice API Evolution in Practice: A Study on Strategies and Challenges. *Journal of Systems and Software*, 215, Article 112110. https://doi.org/10.1016/j.jss.2024.112110 | Backend Architecture | Scopus Indexed; SJR 2023: Q1 (0.97, Software / Info Systems); CiteScore 2023: Q1 (90th percentile) | [arXiv Open Access Preprint](https://arxiv.org/pdf/2405.02107); [Publisher Landing Page](https://doi.org/10.1016/j.jss.2024.112110) | Qualitative empirical interview study: 17 semi-structured interviews with developers, architects, and engineering managers across 11 commercial software companies. | Categorizes 6 industrial API evolution strategies (strict backward compatibility, consumer-driven contracts, semantic versioning) and 6 recurring challenges (change impact overhead, breaking communication). Breaking changes cause consumer lock-in and API degradation. | Investigates organizational perceptions and human practices; does not measure real-time network latency or binary serialization overheads. | Mandates strict backward compatibility for FishMap REST/JSON APIs across Flutter mobile releases. Mobile users do not update apps simultaneously, making breaking payload alterations a critical service failure point. |
-| **S12** | Mao, Q., Qader, M. A., & Hristidis, V. (2023). Comparison of LSM indexing techniques for storing spatial data. *Journal of Big Data*, 10, Article 51. https://doi.org/10.1186/s40537-023-00734-3 | Geospatial Data | Scopus Indexed; SJR 2023: Q1 (1.96, Info Systems / Computer Networks); CiteScore 2023: Q1 (94th percentile) | [Publisher Open Access PDF (CC BY 4.0)](https://journalofbigdata.springeropen.com/counter/pdf/10.1186/s40537-023-00734-3.pdf) | Experimental benchmarking: implementation and performance evaluation of three stack-based spatial merge policies versus leveled merge policies in Apache AsterixDB under varied spatial workloads. | Evaluates spatial multi-dimensional indexing under write-intensive and read-intensive loads. Proves that leveled merge policies underperform stack-based policies for spatial queries because bounding boxes overlap excessively across levels, creating severe read amplification. | Evaluated within a distributed LSM-tree framework (AsterixDB); does not benchmark classic B-tree/R-tree relational PostGIS engines on single-node relational databases. | Highlights the critical tradeoff between ingestion throughput and spatial query efficiency. Confirms that spatial queries (bounding box, radius) require spatial partitioning (such as PostGIS R-tree/GiST) to prevent high query latency during spot lookups. |
-| **S13** | Wei, B., Guo, X., Li, X., Wu, Z., Zhao, J., & Zou, Q. (2024). Construct and Query A Fine-Grained Geospatial Knowledge Graph. *Data Science and Engineering*, 9(1), 70–84. https://doi.org/10.1007/s41019-023-00237-4 | Geospatial Data | Scopus Indexed; SJR 2023: Q1 (1.21, AI / Info Systems / Software); CiteScore 2023: Q1 (88th percentile) | [Publisher Open Access PDF (CC BY 4.0)](https://link.springer.com/content/pdf/10.1007/s41019-023-00237-4.pdf) | Algorithmic design and empirical evaluation: developed the FineGeoKG framework, defined six Strong Geospatial Relations (SGRs), edge indexing, and optimized binary join algorithms for subgraph queries. | Demonstrates that standard geometric queries fail to model rich topological relationships (adjacency, river containment, directional proximity). Graph-spatial edge indexing speeds up complex multi-entity spatial queries by up to an order of magnitude. | High initial construction overhead for calculating fine-grained interlinks; evaluated on formal geographic datasets rather than volatile crowdsourced user spots. | Demonstrates how FishMap can evolve beyond simple latitude/longitude points: modeling fishing spots as entities linked to specific waterbodies, river basins, access roads, and fish species habitats enables contextual AI recommendations. |
-| **S14** | Jain, A. K., Sahoo, S. R., & Kaubiyal, J. (2021). Online social networks security and privacy: comprehensive review and analysis. *Complex & Intelligent Systems*, 7(5), 2157–2177. https://doi.org/10.1007/s40747-021-00409-7 | Social Platforms & Security | Scopus Indexed; SJR 2023: Q1 (1.08, AI / Info Systems); CiteScore 2023: Q1 (87th percentile) | [Publisher Open Access PDF (CC BY 4.0)](https://link.springer.com/content/pdf/10.1007/s40747-021-00409-7.pdf) | Comprehensive systematic review and comparative analysis: taxonomic classification of OSN security threats, application-level vulnerabilities, and defensive countermeasures. | Categorizes primary OSN attack vectors: identity cloning, unauthorized tracking, photo metadata exploitation, and friend-network crawling. Concludes that complex privacy settings cause accidental oversharing, recommending privacy-by-default and automated metadata scrubbing. | Broad literature survey; does not evaluate user behavior in outdoor/recreational niche networks or measure performance penalties of specific crypto-schemes. | Directly dictates FishMap's social security posture: mandatory server-side EXIF scrubbing on uploaded catch photos (to prevent unintended coordinate leakage), JWT token validation at the gateway, and simple, explicit privacy toggles. |
-| **S15** | Cerruto, F., Cirillo, S., Desiato, D., Gambardella, S. M., & Polese, G. (2022). Social network data analysis to highlight privacy threats in sharing data. *Journal of Big Data*, 9, Article 21. https://doi.org/10.1186/s40537-022-00566-7 | Social Platforms & Security | Scopus Indexed; SJR 2023: Q1 (1.96, Info Systems / Computer Networks); CiteScore 2023: Q1 (94th percentile) | [Publisher Open Access PDF (CC BY 4.0)](https://journalofbigdata.springeropen.com/counter/pdf/10.1186/s40537-022-00566-7.pdf) | Empirical data mining and profiling: developed the SODA (SOcial Data Analyzer) tool using face and image matching across 5,000 public social profiles to evaluate cross-platform re-identification. | Demonstrates that isolated pieces of shared data (avatar, gear mentions, approximate location) can be automatically correlated across platforms to de-anonymize users and infer private personal routines and sensitive habits. | Focuses on public cross-platform crawling across mainstream networks (Facebook, Twitter/X, Instagram, LinkedIn); does not evaluate end-to-end encrypted messaging. | Reinforces the privacy requirement expressed in angler interviews: anglers want control over who sees their catches, tackle, and spots. Validates FishMap's three-tier visibility model (public, friends-only, private) and strict rate-limiting on profile endpoints. |
+### 2.3 Inclusion and exclusion criteria
 
----
+Studies were included when they were peer-reviewed journal articles or major conference publications, were directly relevant to one of the three research areas, and had a publication record and DOI that could be checked. Publications from 2021–2024 were selected to keep the review relatively recent. Open-access full text was preferred where available.
+
+Non-peer-reviewed blog posts, vendor marketing materials, unrelated studies, and sources without a verifiable publication record were excluded.
+
+**Indexing and quartile note:** Journal quartiles depend on the indexing database, subject category, and year. This review therefore does not assign a Q1/Q2 label or reproduce CiteScore/SJR values without a separately verified year-specific record. The presence of a DOI and open-access full text does not by itself prove a particular quartile.
+
+## 3. Analysis of Reviewed Publications
+
+| ID | Publication | Research area | Method and evidence | Main finding relevant to this review | Limitations and relevance to FishMap |
+|---|---|---|---|---|---|
+| **S9** | Ayas, H. M., Leitner, P., & Hebig, R. (2023). “An empirical study of the systemic and technical migration towards microservices.” *Empirical Software Engineering*, 28, Article 85. [DOI](https://doi.org/10.1007/s10664-023-10308-9) | Backend architecture | Qualitative study using 19 interviews and analysis of 215 Stack Overflow discussions, using grounded-theory techniques. | The authors describe migration as a multi-stage organizational and technical process, identifying 14 activities and 53 solution outcomes. They emphasize that migration involves supporting practices and infrastructure as well as code decomposition. | The study concerns migration journeys, not a controlled comparison of all possible greenfield architectures. For FishMap, it supports treating service boundaries, deployment, observability, and operational overhead as design concerns rather than assuming that more services automatically improve a system. |
+| **S10** | Assunção, W. K. G., Krüger, J., Mosser, S., & Selaoui, S. (2023). “How do microservices evolve? An empirical analysis of changes in open-source microservice repositories.” *Journal of Systems and Software*, 204, Article 111788. [DOI](https://doi.org/10.1016/j.jss.2023.111788) | Backend architecture | Repository mining of 11 open-source microservice systems, covering 7,319 commits and almost 100,000 atomic changes, supplemented by qualitative analysis. | The study reports that service evolution often involves coordinated changes; isolated evolution is not the dominant pattern in the studied systems. | Open-source projects may differ from commercial systems and from FishMap's current scale. The result supports considering a monorepo for coordinated development, but it does **not** prove that a monorepo is always superior or that it eliminates coupling. |
+| **S11** | Lercher, A., Glock, J., Macho, C., & Pinzger, M. (2024). “Microservice API Evolution in Practice: A Study on Strategies and Challenges.” *Journal of Systems and Software*, 215, Article 112110. [DOI](https://doi.org/10.1016/j.jss.2024.112110) | Backend architecture | 17 semi-structured interviews with developers, architects, and managers from 11 companies. | The study identifies six API-evolution strategies and six challenges. Strategies commonly emphasize backward compatibility, versioning, and collaboration; challenges include change-impact analysis and consumers remaining dependent on old API versions. | The study is qualitative and does not quantify latency or prove one universal versioning policy. It supports documenting FishMap API contracts, testing consumers, and avoiding breaking changes that would disrupt older mobile clients. |
+| **S12** | Mao, Q., Qader, M. A., & Hristidis, V. (2023). “Comparison of LSM indexing techniques for storing spatial data.” *Journal of Big Data*, 10, Article 51. [DOI](https://doi.org/10.1186/s40537-023-00734-3) | Geospatial data | Experimental comparison of spatial LSM-index merge policies implemented in Apache AsterixDB, using real-world and synthetic spatial workloads. | The authors find that merge-policy and partitioning choices affect write throughput, write amplification, and spatial-query performance. Stack-based policies performed well across many tested settings; some leveled configurations achieved competitive read performance. | This is an LSM/AsterixDB study, not a benchmark of PostgreSQL/PostGIS. It cannot be used to claim that PostGIS is faster or slower. For FishMap, it illustrates that spatial-index performance depends on the database engine, index, workload, and configuration and should be benchmarked in the intended environment. |
+| **S13** | Wei, B., Guo, X., Li, X., Wu, Z., Zhao, J., & Zou, Q. (2024). “Construct and Query A Fine-Grained Geospatial Knowledge Graph.” *Data Science and Engineering*, 9, 152–176. [DOI](https://doi.org/10.1007/s41019-023-00237-4) | Geospatial data | Design and experimental evaluation of FineGeoKG, a framework for representing and querying quantified neighboring relationships between geographic objects. | The work addresses geographic relationships that may be lost when data is represented only as separate objects or coordinates. It models relationships between neighboring spatial entities and evaluates queries over them. | The framework is not specifically designed for fishing apps or rapidly changing user-submitted spots. For FishMap, it motivates linking spots to relevant waterbodies and regions when reliable data is available; it does not establish that a graph database is required. |
+| **S14** | Jain, A. K., Sahoo, S. R., & Kaubiyal, J. (2021). “Online social networks security and privacy: comprehensive review and analysis.” *Complex & Intelligent Systems*, 7, 2157–2177. [DOI](https://doi.org/10.1007/s40747-021-00409-7) | Social privacy and security | Review of online social-network security and privacy threats and proposed countermeasures. | The review surveys a broad range of OSN threats and defenses, emphasizing that privacy and security depend on both platform mechanisms and user-facing choices. | This is a broad review, not a FishMap-specific experiment. It supports privacy-by-design as a principle, but individual safeguards—such as EXIF removal, authorization rules, and rate limits—must be selected and tested against FishMap's threat model. |
+| **S15** | Cerruto, F., Cirillo, S., Desiato, D., Gambardella, S. M., & Polese, G. (2022). “Social network data analysis to highlight privacy threats in sharing data.” *Journal of Big Data*, 9, Article 19. [DOI](https://doi.org/10.1186/s40537-022-00566-7) | Social privacy and security | Evaluation of SODA, a system that searches for and correlates profile information across social networks. The evaluation began with 7,000 people and found 5,000 on at least one social platform. | The study demonstrates how information available across multiple social platforms can be correlated to identify people and aggregate profile data. | The study is about cross-platform profile discovery, not fishing-location privacy specifically. It nevertheless illustrates why seemingly harmless profile details can become more revealing when combined. FishMap should minimize unnecessary public information and enforce access checks on private resources. |
 
 ## 4. Comparative Synthesis
 
-### 4.1 Backend and Microservice Architecture
+### 4.1 Backend and microservice architecture
 
-The literature underscores a fundamental dichotomy in modern microservice engineering: while microservices promise operational decoupling, independent scalability, and organizational agility, realizing these benefits in practice requires overcoming significant architectural friction.
+The three backend studies show that a microservice architecture does not remove complexity; it changes where that complexity appears. Ayas et al. (S9) describe the organizational and technical work involved in adopting microservices. Assunção et al. (S10) find that services in their sample frequently change together. Lercher et al. (S11) show that API changes create coordination problems, particularly when consumers rely on older versions.
 
-1. **Systemic Foundations vs. Surface Decomposition:**  
-   Ayas et al. (S9) show that migrating to or building microservices is not merely a task of cutting code into separate repositories. It requires establishing mature supporting infrastructure: unified API gateways, standardized service discovery, containerization, and dedicated database schemas per service. Without these foundations, teams experience severe operational drag. FishMap adheres directly to this principle by employing an API Gateway (port 4000) that encapsulates domain services (`auth:4001`, `users:4002`, `fishing:4003`, `inventory:4004`, `social:4005`, `chat:4006`, `weather:4007`, `ai:4008`), while container health checks ensure predictable startup ordering.
+For FishMap, these findings suggest the following design principles:
 
-2. **The Reality of Co-Evolution and Shotgun Surgery:**  
-   The empirical findings of Assunção et al. (S10) challenge the common assumption that microservices evolve independently. Across thousands of commits in open-source systems, services frequently co-evolved in tightly coupled groups, and bug fixes or feature additions frequently required "shotgun surgery" across multiple repositories. For FishMap, this provides strong justification for maintaining a **monorepo structure** (with distinct service subdirectories under `backend/services/`). In a team developing a specialized social network, a monorepo eliminates distributed version drift, enables atomic contract changes, and prevents cross-repository merge synchronization failures.
+1. **Keep service boundaries explicit.** Services should represent clear business responsibilities, and communication between them should use documented interfaces.
+2. **Avoid premature repository fragmentation.** A monorepo can make coordinated changes and shared testing easier for a small team, but it does not itself guarantee independent services or low coupling.
+3. **Protect API compatibility.** Prefer additive, backward-compatible API changes where practical; document breaking changes and test affected clients and services.
+4. **Measure operational complexity.** Health checks, centralized logs, configuration management, monitoring, and repeatable deployment are necessary considerations as the number of services grows.
 
-3. **API Contract Stability and Consumer Protection:**  
-   Lercher et al. (S11) demonstrate that changing microservice APIs in production carries high coordination costs and risks consumer lock-in or breaking failures. In mobile applications like FishMap, API evolution is even more constrained than in web-only environments because mobile client updates are asynchronous: end-users may continue running older Flutter APK or IPA builds for months. Consequently, FishMap's backend must enforce strict backward compatibility, provide optional/defaulted payload parameters, and version breaking routes at the API Gateway level rather than modifying active schema endpoints in-place.
+These are recommendations derived from the literature, not claims that every supporting mechanism is already implemented in FishMap.
 
-### 4.2 Geospatial Data Storage, Indexing, and Spatial Queries
+### 4.2 Geospatial data storage, indexing, and queries
 
-Geospatial functionality is the core differentiator of FishMap: anglers discover fishing spots, evaluate waterbody boundaries, record catch coordinates, and request location-specific lure recommendations.
+Mao et al. (S12) evaluate spatial indexing within an LSM-based database system. Their results show that indexing and merge-policy choices affect performance under different workloads. The findings should not be transferred directly to PostGIS because the database architecture and index maintenance mechanisms differ.
 
-1. **Indexing Architectures and Spatial Query Amplification:**  
-   Mao et al. (S12) investigate spatial data indexing and reveal that multi-dimensional spatial data cannot be managed like flat sequential records. When spatial data is written across storage tiers (such as in LSM-trees), improper merge policies cause severe bounding box overlaps between storage files, leading to catastrophic read amplification during bounding box queries. In FishMap's architecture, fishing spots and catch logs are stored in PostgreSQL enhanced with PostGIS. PostGIS utilizes **Generalized Search Tree (GiST)** R-tree indexing. R-tree indexing groups nearby spatial objects into hierarchical bounding boxes, allowing $O(\log N)$ spatial range queries and nearest-neighbor ($k$-NN) calculations (`<->` operator). This avoids the bounding box fragmentation and query degradation analyzed by S12.
+If FishMap uses PostgreSQL with PostGIS, a spatial column and an appropriate GiST index are a reasonable design option for fishing spots and catch locations. Spatial functions such as `ST_DWithin` and `ST_Distance` can support proximity and distance calculations. However, actual performance depends on query structure, data volume, geometry type, index selectivity, and query plans. It should be measured with representative data rather than assumed to be sub-second or to have a guaranteed \(O(\log N)\) runtime.
 
-2. **From Coordinate Points to Semantic Spatial Knowledge:**  
-   Wei et al. (S13) demonstrate that simple point coordinates $(lat, lon)$ fail to capture the ecological and physical reality of geography. By formalizing Strong Geospatial Relations (SGRs) such as topological containment, river connectivity, and directional proximity, spatial querying can answer complex domain questions. In the context of FishMap, this supports enhancing spot records beyond isolated GPS markers: spots must be associated with parent waterbody entities (e.g., the Kigach River, Fortunata canal, or Caspian coastal zone), depth profiles, and target species habitats. This structural linkage provides rich domain context that the FishMap AI assistant can query when explaining seasonal lure choices or local fishing regulations.
+Wei et al. (S13) explore a richer representation of geographic relationships. For FishMap, a practical first step is to associate spots with waterbodies or geographic regions using relational records and stable identifiers. A geospatial knowledge graph could be considered later if FishMap needs complex relationships that are difficult to express and query with its existing data model. The cited study does not establish that a graph database is necessary for a regional fishing application.
 
-### 4.3 Social Platforms, Privacy, and Security
+### 4.3 Social-platform privacy and security
 
-Social fishing networks introduce specific privacy risks that standard social networks do not share: anglers are notoriously protective of their productive fishing spots ("honey holes"), while wildlife regulations mandate responsible reporting of protected species.
+Jain et al. (S14) survey security and privacy risks in online social networks. Cerruto et al. (S15) demonstrate how information from multiple social platforms can be correlated. Together, they support reducing unnecessary exposure and making authorization rules explicit.
 
-1. **Vulnerabilities in Media and Network Traversal:**  
-   Jain et al. (S14) document that photo sharing in social networks is one of the highest-risk vectors for accidental data leakage. Anglers taking photos of catches in the field often have GPS geotagging enabled on their smartphones. If an application publishes the raw photo without processing, third parties can extract exact coordinates from EXIF metadata, exposing a secret spot against the angler's intent. To counter this, FishMap must implement **automatic server-side EXIF stripping** in its upload pipeline (`backend/services/social/src/middlewares/upload.middleware.js`), ensuring images stored in public storage contain only clean pixel data.
+Fishing locations may be sensitive even when a catch photograph is intended to be public. A photo can contain location metadata, and a post may reveal a location through its text or visible landmarks even after metadata has been removed. Therefore:
 
-2. **Cross-Platform Profiling and Granular Access Controls:**  
-   Cerruto et al. (S15) show how automated scraping tools can combine fragmented public profile information (avatars, gear lists, timestamps) to build comprehensive behavioral dossiers. This directly reinforces the findings from FishMap's user interviews (participant P1 explicitly stating an unwillingness to share certain locations publicly). FishMap addresses this threat through architectural mechanisms:
-   - **Three-Tier Visibility Controls:** Spots, catches, and gear inventory can be marked as `private`, `friends-only`, or `public`.
-   - **Attribute-Level Privacy:** Anglers can share a photo and story of a catch to the public social feed while masking or blurring the exact GPS coordinates.
-   - **Gateway Security:** The API Gateway enforces JWT-based authentication, rate limiting, and input sanitization to prevent automated scraping of angler profiles and spot coordinates.
+- **Separate post visibility from spot visibility.** A public catch post should not automatically make the exact fishing spot public.
+- **Enforce authorization on the server.** Hiding a location or button in the client is not sufficient; every relevant API request must check whether the requester is allowed to view or change the resource.
+- **Handle uploaded metadata deliberately.** Inspect uploaded media and, where appropriate, remove EXIF metadata before making images available to other users. Metadata removal does not hide coordinates written in captions or visible in the image.
+- **Use simple privacy choices.** Options such as `private`, `friends-only`, and `public` are understandable only if the application clearly explains what each setting exposes.
+- **Limit automated collection.** Rate limits, pagination limits, monitoring, and authorization checks can reduce some forms of scraping, though rate limiting alone cannot prevent all profiling.
 
----
+These controls are proposed requirements for FishMap. They should be verified against the current code and tested before being described as implemented.
 
 ## 5. Evidence-Based Implications for FishMap
 
-The synthesis of reviewed literature directly informs the implementation and roadmap of FishMap:
+| Research area | Evidence from the reviewed literature | Recommended FishMap decision |
+|---|---|---|
+| Service architecture | Microservice migration involves infrastructure and organizational work, not only code separation (S9). | Document service responsibilities and contracts; assess operational cost as the service count grows. |
+| Service evolution | Services in the studied systems often co-evolved (S10). | Keep coordinated code in a monorepo while it benefits the team; use automated tests to detect cross-service regressions. |
+| API evolution | Backward compatibility, versioning, and change communication are recurring strategies and challenges (S11). | Prefer compatible API changes, document breaking changes, and test older mobile-client assumptions. |
+| Spatial indexing | LSM spatial-index performance depends on merge policy, partitioning, and workload (S12). | Choose the spatial index for the actual database engine and validate it with representative FishMap queries and data volumes. |
+| Geographic semantics | Fine-grained links between geographic entities can represent relationships that raw coordinates do not capture (S13). | Consider relational links between spots and waterbodies first; evaluate graph-based approaches only if a demonstrated query need emerges. |
+| Privacy and security | OSN privacy risks require platform-level protections as well as understandable user choices (S14). | Define server-side access rules and clear visibility settings; review media processing and authentication controls. |
+| Cross-platform profiling | Public profile data can be correlated across social platforms (S15). | Minimize exposed profile data and avoid exposing exact spot coordinates unless the owner explicitly allows it. |
 
-| Research Area | Academic Finding from Literature | Specific FishMap Architectural Decision |
-|:---|:---|:---|
-| **Backend Architecture** | Microservices require mature supporting infrastructure (gateways, isolated databases, contract testing) to avoid failure (S9). | Maintain unified API Gateway (port 4000) for client routing, request validation, and service abstraction. Maintain dedicated databases per microservice. |
-| **Backend Architecture** | Microservices frequently co-evolve; multi-repo architectures suffer from "shotgun surgery" and contract drift (S10). | Keep FishMap as a monorepo containing `backend/services/*`, `frontend/flutter_app`, and shared infrastructure, ensuring synchronized changes. |
-| **Backend Architecture** | Breaking API changes cause consumer degradation and client failures (S11). | Enforce strict backward compatibility on REST endpoints to accommodate mobile clients on older versions. Use non-breaking field additions. |
-| **Geospatial Data** | Multi-dimensional spatial data requires dedicated spatial indexing to prevent bounding box overlap and query amplification (S12). | Implement PostGIS GiST spatial indexing on spot and catch coordinates; use native PostGIS functions (`ST_DWithin`, `ST_MakePoint`, `ST_Distance`) for bounding-box queries. |
-| **Geospatial Data** | Linking coordinate points to relational geographical entities accelerates queries and enriches semantics (S13). | Relate fishing spots to waterbody and basin records in `fishmap_fishing` to allow semantic filtering and contextual AI advice. |
-| **Social & Security** | User photos leak sensitive geolocation through EXIF metadata; user privacy controls are often misunderstood (S14). | Automatically strip EXIF geolocation metadata from uploaded images before storage; provide simple, transparent privacy settings per post. |
-| **Social & Security** | Automated cross-referencing of public social data compromises user anonymity and location secrets (S15). | Support granular spot and inventory visibility (`private`, `friends-only`, `public`); decouple catch showcase posts from exact map coordinates; enforce gateway rate-limiting. |
+## 6. Research Gaps and Practical Validation
 
----
+### Gap 1: Mobile clients and API evolution
 
-## 6. Gaps and How FishMap Addresses Them
+The reviewed API-evolution study (S11) is based on interviews across companies and does not specifically measure FishMap's mobile-client compatibility needs.
 
-1. **Gap 1: Generic microservice studies lack mobile client synchronization analysis.**  
-   *Assessment:* Studies S9, S10, and S11 evaluate backend microservice evolution but primarily discuss enterprise web systems or open-source libraries. They do not deeply analyze the constraints of mobile clients with intermittent network connectivity in outdoor environments.  
-   *FishMap Mitigation:* FishMap implements offline-tolerant state caching in Flutter and ensures all API payload changes are strictly backward compatible.
+**FishMap response:** Treat backward compatibility as a design requirement. Verify it with API contract tests and tests for supported client versions. Offline caching or synchronization should only be claimed once the relevant behavior is implemented and tested.
 
-2. **Gap 2: Spatial indexing studies focus on big-data clusters rather than localized outdoor services.**  
-   *Assessment:* Study S12 analyzes LSM-tree spatial merge policies in distributed big data engines (AsterixDB). While theoretically informative, it does not evaluate relational spatial extensions like PostGIS for regional-scale angler communities.  
-   *FishMap Mitigation:* FishMap utilizes PostGIS on PostgreSQL 16 with GiST indexing, which is proven and optimized for sub-second spatial queries on millions of point geometries.
+### Gap 2: Spatial-index performance in FishMap's deployment
 
-3. **Gap 3: Social privacy literature focuses on general social media rather than recreational sports communities.**  
-   *Assessment:* Studies S14 and S15 focus on general social platforms (Facebook, Instagram, LinkedIn). They do not address the unique "secret spot" culture of angling, where location disclosure has economic, competitive, and conservation consequences.  
-   *FishMap Mitigation:* FishMap incorporates angler-specific privacy features: catch posts can be published publicly without revealing exact GPS coordinates, and private spots remain strictly visible only to the creator.
+The LSM-index study (S12) uses Apache AsterixDB rather than PostgreSQL/PostGIS, so it cannot establish FishMap's query latency.
 
----
+**FishMap response:** If PostGIS is selected, create representative test data and benchmark radius, bounding-box, and nearest-neighbor queries. Record dataset size, query plans, index definitions, and observed latency before making performance claims.
+
+### Gap 3: Angler-specific location privacy
+
+The reviewed social-network studies (S14 and S15) are not focused on anglers or the practice of keeping productive fishing locations private.
+
+**FishMap response:** Define a threat model for private spots and catch posts. Test that users cannot access private coordinates through API responses, search, feeds, notifications, or media metadata. The exact requirements should be validated with anglers rather than inferred from general OSN studies alone.
 
 ## 7. Conclusion
 
-This literature review establishes a rigorous scientific and architectural foundation for the FishMap backend, geospatial data layer, and social security framework. By grounding our engineering choices in recent peer-reviewed research (all 7 reviewed works published between 2021 and 2024 in Scopus Q1 journals), FishMap avoids common pitfalls of distributed systems:
+The seven reviewed publications provide useful evidence for three areas of FishMap engineering. Microservice research shows that distributed service boundaries introduce coordination and API-evolution challenges as well as potential benefits. Geospatial research shows that query performance depends on the index architecture and workload, while richer geographic relationships can provide context beyond isolated coordinates. Social-platform research demonstrates that profile data and shared media can reveal more information than users intend.
 
-- **Monorepo microservice coordination** mitigates the co-evolution and shotgun surgery overheads identified in the literature (S9, S10).
-- **Strict REST contract backward compatibility** ensures stable mobile client operation without consumer degradation (S11).
-- **PostGIS GiST indexing and spatial entity relationships** provide high-performance spatial querying while laying the foundation for semantic, ecological spot recommendations (S12, S13).
-- **Privacy-by-design principles**, including automated EXIF metadata scrubbing and three-tier visibility toggles, protect angler secrecy and comply with modern data privacy expectations (S14, S15).
+The resulting recommendations are to maintain clear service contracts, avoid unnecessary repository fragmentation, protect API compatibility, benchmark spatial queries in the selected database, model relationships to waterbodies when useful, and enforce privacy on the server. In particular, public catch sharing should be designed separately from disclosure of exact fishing coordinates.
 
-Together with Part 1 (`docs/literature-review-client-ai.md`), this document completes the literature review requirements for the FishMap project, providing a unified, evidence-based engineering roadmap across both client and server domains.
-
----
+These are evidence-informed design recommendations, not proof that all listed features are currently implemented. Before the final project report is submitted, each implementation claim should be checked against the repository and tested behavior. Together with Part 1, this review provides the basis for a coordinated discussion of FishMap's client, AI, backend, geospatial, and privacy requirements.
 
 ## 8. References
 
-1. **[S9]** Ayas, H. M., Leitner, P., & Hebig, R. (2023). An empirical study of the systemic and technical migration towards microservices. *Empirical Software Engineering*, 28(4), Article 85. https://doi.org/10.1007/s10664-023-10308-9
-2. **[S10]** Assunção, W. K. G., Krüger, J., Mosser, S., & Selaoui, S. (2023). How do microservices evolve? An empirical analysis of changes in open-source microservice repositories. *Journal of Systems and Software*, 204, Article 111788. https://doi.org/10.1016/j.jss.2023.111788
-3. **[S11]** Lercher, A., Glock, J., Macho, C., & Pinzger, M. (2024). Microservice API Evolution in Practice: A Study on Strategies and Challenges. *Journal of Systems and Software*, 215, Article 112110. https://doi.org/10.1016/j.jss.2024.112110
-4. **[S12]** Mao, Q., Qader, M. A., & Hristidis, V. (2023). Comparison of LSM indexing techniques for storing spatial data. *Journal of Big Data*, 10, Article 51. https://doi.org/10.1186/s40537-023-00734-3
-5. **[S13]** Wei, B., Guo, X., Li, X., Wu, Z., Zhao, J., & Zou, Q. (2024). Construct and Query A Fine-Grained Geospatial Knowledge Graph. *Data Science and Engineering*, 9(1), 70–84. https://doi.org/10.1007/s41019-023-00237-4
-6. **[S14]** Jain, A. K., Sahoo, S. R., & Kaubiyal, J. (2021). Online social networks security and privacy: comprehensive review and analysis. *Complex & Intelligent Systems*, 7(5), 2157–2177. https://doi.org/10.1007/s40747-021-00409-7
-7. **[S15]** Cerruto, F., Cirillo, S., Desiato, D., Gambardella, S. M., & Polese, G. (2022). Social network data analysis to highlight privacy threats in sharing data. *Journal of Big Data*, 9, Article 21. https://doi.org/10.1186/s40537-022-00566-7
+1. **[S9]** Ayas, H. M., Leitner, P., & Hebig, R. (2023). An empirical study of the systemic and technical migration towards microservices. *Empirical Software Engineering, 28*, Article 85. https://doi.org/10.1007/s10664-023-10308-9  
+   Open access: https://pmc.ncbi.nlm.nih.gov/articles/PMC10201508/
+
+2. **[S10]** Assunção, W. K. G., Krüger, J., Mosser, S., & Selaoui, S. (2023). How do microservices evolve? An empirical analysis of changes in open-source microservice repositories. *Journal of Systems and Software, 204*, Article 111788. https://doi.org/10.1016/j.jss.2023.111788  
+   Open-access author copy: https://jacobkrueger.github.io/assets/papers/Assuncao2023MicroserviceEvolution.pdf
+
+3. **[S11]** Lercher, A., Glock, J., Macho, C., & Pinzger, M. (2024). Microservice API Evolution in Practice: A Study on Strategies and Challenges. *Journal of Systems and Software, 215*, Article 112110. https://doi.org/10.1016/j.jss.2024.112110  
+   Open access: https://www.sciencedirect.com/science/article/pii/S0164121224001559
+
+4. **[S12]** Mao, Q., Qader, M. A., & Hristidis, V. (2023). Comparison of LSM indexing techniques for storing spatial data. *Journal of Big Data, 10*, Article 51. https://doi.org/10.1186/s40537-023-00734-3  
+   Open access: https://link.springer.com/article/10.1186/s40537-023-00734-3
+
+5. **[S13]** Wei, B., Guo, X., Li, X., Wu, Z., Zhao, J., & Zou, Q. (2024). Construct and Query A Fine-Grained Geospatial Knowledge Graph. *Data Science and Engineering, 9*, 152–176. https://doi.org/10.1007/s41019-023-00237-4  
+   Open access: https://link.springer.com/article/10.1007/s41019-023-00237-4
+
+6. **[S14]** Jain, A. K., Sahoo, S. R., & Kaubiyal, J. (2021). Online social networks security and privacy: comprehensive review and analysis. *Complex & Intelligent Systems, 7*, 2157–2177. https://doi.org/10.1007/s40747-021-00409-7  
+   Open access: https://link.springer.com/article/10.1007/s40747-021-00409-7
+
+7. **[S15]** Cerruto, F., Cirillo, S., Desiato, D., Gambardella, S. M., & Polese, G. (2022). Social network data analysis to highlight privacy threats in sharing data. *Journal of Big Data, 9*, Article 19. https://doi.org/10.1186/s40537-022-00566-7  
+   Open access: https://link.springer.com/article/10.1186/s40537-022-00566-7
