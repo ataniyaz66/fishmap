@@ -2,9 +2,6 @@ UX Prototype
 Task: FIS-7 Language of the interface: Russian (the client has a language switch).
 1. Approach
 The prototype consists of two kinds of materials:
-1.	Working client. Screenshots of the mobile client implemented in Flutter (frontend/flutter_app), taken in a browser at phone width. They show the scenarios that are already implemented.
-2.	Design mockups of planned screens. Static mockups for scenarios that are required but not visible in the current client. They are not part of the working application. Mockups: https://claude.ai/artifact/88AbnZCypmAg7uPvZiuB4G
-Screenshots show test data.
 2. Navigation structure
 The bottom navigation of the client has five items: Feed, Map, Create, Anglers, Profile. The profile screen is the entry point for services: diary of catches, equipment box (inventory), AI advisor, fishing weather, and messages.
 3. Scenarios and evidence
